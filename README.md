@@ -10,4 +10,5 @@
 - 1712584: Nguyễn Công Lý
 
 * Trong đồ án này, nhóm lựa chọn tối ưu hoá cho 1 model Object Detection & Segmentation dựa vào Mask RCNN đã được huấn luyện sẵn.
-* Kế hoạch phần công công việc của nhóm: sẽ được cập nhật sau.
+* Kế hoạch phân công công việc của nhóm [tại đây](https://docs.google.com/spreadsheets/d/1CDZhYaKv_k68HpzkTHc-RwWgaBjBY12RCkK1squYVBM/edit?usp=sharing).
+
