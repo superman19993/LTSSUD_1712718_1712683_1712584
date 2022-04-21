@@ -18,15 +18,15 @@
 * Kế hoạch phân công công việc của nhóm [tại đây](https://docs.google.com/spreadsheets/d/1CDZhYaKv_k68HpzkTHc-RwWgaBjBY12RCkK1squYVBM/edit?usp=sharing).
 
 ## Bài toán:
-Đề tài: Nhật diện và phân đoạn đối tượng với Mask-RCNN
-Input:
+**Đề tài:** Nhật diện và phân đoạn đối tượng với Mask-RCNN
+**Input:**
 * Ảnh đầu vào có kích thước W x H
 
-Output:
+**Output:**
 * Các bounding box:[cx, cy, w, h] (tọa độ tâm + kích thước) tại các vị trí nghi ngờ có cá thể
 
 Ý nghĩa thực tế: 
 
-Lý do chọn đề tài: 
+**Lý do chọn đề tài:** 
 * Bài toán sử dụng mạng CNN (liên quan đến tác vụ convolution trên ảnh)
 
