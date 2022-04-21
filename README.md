@@ -11,7 +11,6 @@
 3. 1712584: Nguyễn Công Lý
 
 
-*.
  
 **Tài liệu nhóm**:
 * Link Colab thực hiện: [Link Colab](https://colab.research.google.com/drive/1V1YkQHvIPv5-THZ0ETgPHOIy2O2teKBN)
