@@ -3,13 +3,14 @@ import random
 import skimage.io
 import inferenceConfig
 from mrcnn import visualize
+from mrcnn import model2
 
 # Load a random image from the images folder
 file_names = next(os.walk(inferenceConfig.IMAGE_DIR))[2]
 image = skimage.io.imread(os.path.join(inferenceConfig.IMAGE_DIR, random.choice(file_names)))
 
 # Run detection
-results = inferenceConfig.model.detect([image], verbose=0)
+results = model2.detect([image], verbose=0)
 
 # Visualize results
 r = results[0]

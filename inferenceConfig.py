@@ -1,6 +1,6 @@
 import os
 import sys
-
+from mrcnn import model2
 # Root directory of the project
 ROOT_DIR = os.path.abspath("./")
 
@@ -37,9 +37,10 @@ config = InferenceConfig()
 
 # Create model object in inference mode.
 model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
+#model = model2.initialize(mode_option = "inference", model_dir=MODEL_DIR, config=config)
 
 # Load weights trained on MS-COCO
-model.load_weights(COCO_MODEL_PATH, by_name=True)
+model2.load_weights(COCO_MODEL_PATH, by_name=True)
 
 # COCO Class names
 # Index of the class in the list is its ID. For example, to get ID of
