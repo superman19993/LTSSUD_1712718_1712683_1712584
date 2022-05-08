@@ -14,6 +14,7 @@ import keras.layers as KL
 import keras.engine as KE
 import keras.models as KM
 from keras.callbacks import Callback
+from numba import jit
 
 from mrcnn import utils
 from mrcnn.utils import Dataset
