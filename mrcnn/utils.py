@@ -24,6 +24,7 @@ import urllib.request
 import shutil
 import warnings
 from distutils.version import LooseVersion
+from numba import jit
 
 # URL from which to download the latest COCO trained weights
 COCO_MODEL_URL = "https://github.com/matterport/Mask_RCNN/releases/download/v2.0/mask_rcnn_coco.h5"
@@ -446,8 +447,7 @@ def resize_image(image, min_dim=None, max_dim=None, min_scale=None, mode="square
 
     # Resize image using bilinear interpolation
     if scale != 1:
-        image = resize(image, (round(h * scale), round(w * scale)),
-                       preserve_range=True)
+        image = resize2(image, (round(h * scale), round(w * scale)))
 
     # Need padding or cropping?
     if mode == "square":
@@ -531,7 +531,7 @@ def minimize_mask(bbox, mask, mini_shape):
         if m.size == 0:
             raise Exception("Invalid bounding box with area of zero")
         # Resize with bilinear interpolation
-        m = resize(m, mini_shape)
+        m = resize2(m, mini_shape)
         mini_mask[:, :, i] = np.around(m).astype(np.bool)
     return mini_mask
 
@@ -549,7 +549,7 @@ def expand_mask(bbox, mini_mask, image_shape):
         h = y2 - y1
         w = x2 - x1
         # Resize with bilinear interpolation
-        m = resize(m, (h, w))
+        m = resize2(m, (h, w))
         mask[y1:y2, x1:x2, i] = np.around(m).astype(np.bool)
     return mask
 
@@ -909,3 +909,30 @@ def resize(image, output_shape, order=1, mode='constant', cval=0, clip=True,
             image, output_shape,
             order=order, mode=mode, cval=cval, clip=clip,
             preserve_range=preserve_range)
+
+@jit(nopython=True)
+def resize2(image, output_shape):
+    height, width, channel = image.shape[:] # get height, width, channel in shape of image
+
+    # new_height = int(height * scale_height) # new height after height scaled
+    # new_width = int(width * scale_width) # new width after width scaled
+
+    array_channel = []
+    array_height = []
+    array_width = []
+
+    for i in range(channel):
+        array_channel.append(np.float64(0))
+    for j in range(output_shape[1]):
+        array_width.append(array_channel)
+    for k in range(output_shape[0]):
+        array_height.append(array_width)
+
+    new_image = np.array(array_height)
+    
+    for i in range(output_shape[0]): # iterate vertical pixel in new height
+        for j in range(output_shape[1]): # iterate horizontal pixel in new width
+            new_image[i, j] = image[int(i / (output_shape[0]/height)), int(j / (output_shape[1]/width))] # root image has bigger size than new image, pixels in root image
+        # have smaller size than new image. Because scale is in range (0, 1) so that pixels divide to scale
+
+    return new_image # return new image
