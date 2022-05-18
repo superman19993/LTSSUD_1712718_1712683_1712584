@@ -57,7 +57,7 @@ def build(mode, config):
     input_image = KL.Input(
             shape=[None, None, config.IMAGE_SHAPE[2]], name="input_image")
 
-    processed_input_image = KL.Input(shape=[None, None, config.IMAGE_SHAPE[2]], name="processed_input_image")
+    processed_input_image = KL.Input(shape=[None, None, 64], name="processed_input_image")
     print(processed_input_image.shape)
     input_image_meta = KL.Input(shape=[config.IMAGE_META_SIZE],
                                     name="input_image_meta")
@@ -815,12 +815,13 @@ def resnet_graph(input_image, architecture, stage5=False, train_bn=True):
         train_bn: Boolean. Train or freeze Batch Norm layers
     """
     assert architecture in ["resnet50", "resnet101"]
+    print(architecture)
     # Stage 1
     # x = KL.ZeroPadding2D((3, 3))(input_image)
     # print(x.shape)
-    x = KL.Conv2D(64, (7, 7), strides=(2, 2), name='conv1', use_bias=True)(input_image)
-    print(x.shape)
-    x = BatchNorm(name='bn_conv1')(x, training=train_bn)
+    # x = KL.Conv2D(64, (7, 7), strides=(2, 2), name='conv1', use_bias=True)(input_image)
+    # print(x.shape)
+    x = BatchNorm(name='bn_conv1')(input_image, training=train_bn)
     x = KL.Activation('relu')(x)
     C1 = x = KL.MaxPooling2D((3, 3), strides=(2, 2), padding="same")(x)
     # Stage 2
