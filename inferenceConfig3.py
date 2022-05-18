@@ -1,6 +1,10 @@
 import os
 import sys
-from mrcnn import model2
+import random
+import skimage.io
+from mrcnn import model3
+import numpy as np
+
 # Root directory of the project
 ROOT_DIR = os.path.abspath("./")
 
@@ -13,6 +17,42 @@ import mrcnn.model as modellib
 sys.path.append(os.path.join(ROOT_DIR, "samples/coco/"))  # To find local version
 import coco
 
+
+def mold_image(images):
+    """Expects an RGB image (or array of images) and subtracts
+    the mean pixel and converts it to float. Expects image
+    colors in RGB order.
+    """
+    return images.astype(np.float32) - np.array([123.7, 116.8, 103.9])
+
+def mold_inputs(images):
+    """Takes a list of images and modifies them to the format expected
+    as an input to the neural network.
+    images: List of image matrices [height,width,depth]. Images can have
+        different sizes.
+
+    Returns 3 Numpy matrices:
+    molded_images: [N, h, w, 3]. Images resized and normalized.
+    image_metas: [N, length of meta data]. Details about each image.
+    windows: [N, (y1, x1, y2, x2)]. The portion of the image that has the
+        original image (padding excluded).
+    """
+    molded_images = []
+    for image in images:
+        # Resize image
+        # TODO: move resizing to mold_image()
+        molded_image, window, scale, padding, crop = utils.resize_image(
+            image,
+            min_dim=800,
+            min_scale=0,
+            max_dim=1024,
+            mode="square")
+        molded_image = mold_image(molded_image)
+        # Append
+        molded_images.append(molded_image)
+    # Pack into arrays
+    molded_images = np.stack(molded_images)
+    return molded_images
 
 # Directory to save logs and trained model
 MODEL_DIR = os.path.join(ROOT_DIR, "logs")
@@ -35,12 +75,19 @@ class InferenceConfig(coco.CocoConfig):
 config = InferenceConfig()
 #config.display()
 
+# Load a random image from the images folder
+file_names = next(os.walk(IMAGE_DIR))[2]
+image = skimage.io.imread(os.path.join(IMAGE_DIR, "3862500489_6fd195d183_z.jpg"))
+
+# Mold processed inputs
+processed_input_image= mold_inputs([image])
+
 # Create model object in inference mode.
-model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
-#model = model2.initialize(mode_option = "inference", model_dir=MODEL_DIR, config=config)
+#model = modellib.MaskRCNN(mode="inference", model_dir=MODEL_DIR, config=config)
+model = model3.initialize(mode_option = "inference", model_dir=MODEL_DIR, config=config)
 
 # Load weights trained on MS-COCO
-model2.load_weights(COCO_MODEL_PATH, by_name=True)
+model3.load_weights(COCO_MODEL_PATH, by_name=True)
 
 # COCO Class names
 # Index of the class in the list is its ID. For example, to get ID of
