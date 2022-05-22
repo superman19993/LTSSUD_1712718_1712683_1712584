@@ -3,21 +3,19 @@ import inferenceConfig3
 from mrcnn import visualize
 from mrcnn import model3
 import numpy as np
-from numba import jit
+from numba import jit, prange
 import math
 import tensorflow as tf
-
-# print(type(inferenceConfig3.processed_input_image))
-# print(inferenceConfig3.processed_input_image)
+import time
 
 @jit
 def Zeropadding(input_image, padding):
   outputShape = (input_image.shape[0],input_image.shape[1]+2*padding,input_image.shape[2]+2*padding,input_image.shape[3])
   outImage = np.zeros(outputShape)
 
-  for channel in range(0, outputShape[3]):
-    for inputCol in range(0, input_image.shape[2]):
-      for inputRow in range(0, input_image.shape[1]):
+  for channel in prange(0, outputShape[3]):
+    for inputCol in prange(0, input_image.shape[2]):
+      for inputRow in prange(0, input_image.shape[1]):
         outImage[0, inputRow+padding, inputCol+padding, channel]+=input_image[0, inputRow, inputCol, channel]
 
   return outImage
@@ -49,12 +47,12 @@ def readKernelFiltersAndBias():
 @jit
 def convolution(image, Filter, bias, stride=1):
     # convolution of input image with a filter of dimensions(n_f,n_c,f,f)
-    # n_f is no.of filters
-    # n_c is no.of channels
+    # n_f is number filters
+    # n_fc is number channels
     # f,f are height & width
 
     # image dimensions(n_c, image_h, image_w)
-    # n_c is no.of channels in image
+    # n_c is number channels in image
     # img_h is height of image
     # img_w is width of image
 
@@ -92,10 +90,71 @@ def convolution(image, Filter, bias, stride=1):
 
     return out
 
+@jit
+def convolution2(image, Filter, bias, stride=1):
+    # convolution of input image with a filter of dimensions(n_f,n_c,f,f)
+    # n_f is number filters
+    # n_fc is number channels
+    # f,f are height & width
 
+    # image dimensions(n_c, image_h, image_w)
+    # n_c is number channels in image
+    # img_h is height of image
+    # img_w is width of image
+
+    (_, img_h, img_w, n_c) = image.shape
+    (n_f, f, f, n_fc) = Filter.shape
+
+    # output dimensions after convolution
+    out_h = int((img_h - f) / stride) + 1  # height of output matrix
+    out_w = int((img_h - f) / stride) + 1  # width of output matrix
+    # n_f will be the depth of the matrix
+
+    out = np.zeros((1, out_h, out_w, n_f))
+
+    # convolution of image_array with filter yeilds out_array
+    # for i in range of no.of filters
+    # define a row , out_y variabless to hover along rows of image, out_matrix respectively
+    # define a column , out_x variables to hover along columns of image, out_matrix respectively
+    # convolution is done in the ranges of image_height to image_width
+    for i in range(n_f):
+        row = out_row = 0
+
+        while row + f <= img_h:
+
+            column = out_column = 0
+
+            while column + f <= img_w:
+                # out[0, out_row, out_column, i] = np.sum(Filter[i] * image[0, row: row + f, column: column + f,:]) + bias[i]
+                for channel in range(0, n_c):
+                  for filterR in range(0, f):
+                    for filterC in range(0, f):
+                      inR = int((row-f/2)+filterR)
+                      inC = int((column-f/2)+filterC)
+                      inR = min(img_h-1 , max(0, inR))
+                      inC = min(img_w-1 , max(0, inC))
+                      out[0, out_row, out_column, i] += Filter[i,filterR,filterC,channel] * image[0, inR, inC, channel]
+                out[0, out_row, out_column, i] += bias[i]
+                column += stride
+                out_column += 1
+
+            row += stride
+            out_row += 1
+
+    print("ok chua", out.shape)
+
+    return out
+
+tic = time.perf_counter()
 inferenceConfig3.processed_input_image = Zeropadding(inferenceConfig3.processed_input_image, 3)
+toc = time.perf_counter()
+print("Zeropadding timer:", {toc - tic}, "seconds")
+
 kernels, bias = readKernelFiltersAndBias()
+tic = time.perf_counter()
 inferenceConfig3.processed_input_image=convolution(inferenceConfig3.processed_input_image, kernels, bias, 2)
+toc = time.perf_counter()
+print("Convolution timer:", {toc - tic}, "seconds")
 
 # Run detection
 results = model3.detect([inferenceConfig3.image], inferenceConfig3.processed_input_image, verbose=0)
@@ -110,5 +169,3 @@ visualize.display_instances(inferenceConfig3.image,
                     inferenceConfig3.CLASS_NAMES, 
                     scores=r['scores'],
                     save_fig_path='output.png')
-
-
