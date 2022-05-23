@@ -119,20 +119,13 @@ def convolution2(image, Filter, bias, stride=1):
     # convolution is done in the ranges of image_height to image_width
     for i in range(n_f):
         row = out_row = 0
-
         while row + f <= img_h:
-
             column = out_column = 0
 
             while column + f <= img_w:
-                # out[0, out_row, out_column, i] = np.sum(Filter[i] * image[0, row: row + f, column: column + f,:]) + bias[i]
                 for channel in range(0, n_c):
-                  for filterR in range(0, f):
-                    for filterC in range(0, f):
-                      inR = int((row-f/2)+filterR)
-                      inC = int((column-f/2)+filterC)
-                      inR = min(img_h-1 , max(0, inR))
-                      inC = min(img_w-1 , max(0, inC))
+                  for filterR, inR in zip(range(0, f), range(row,row+f)):
+                    for filterC, inC in zip(range(0, f), range(column,column+f)):
                       out[0, out_row, out_column, i] += Filter[i,filterR,filterC,channel] * image[0, inR, inC, channel]
                 out[0, out_row, out_column, i] += bias[i]
                 column += stride
@@ -140,10 +133,13 @@ def convolution2(image, Filter, bias, stride=1):
 
             row += stride
             out_row += 1
+        
+        print(i)
 
-    print("ok chua", out.shape)
+    print(out.shape)
 
     return out
+
 
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image = Zeropadding(inferenceConfig3.processed_input_image, 3)
@@ -152,7 +148,7 @@ print("Zeropadding timer:", {toc - tic}, "seconds")
 
 kernels, bias = readKernelFiltersAndBias()
 tic = time.perf_counter()
-inferenceConfig3.processed_input_image=convolution(inferenceConfig3.processed_input_image, kernels, bias, 2)
+inferenceConfig3.processed_input_image=convolution2(inferenceConfig3.processed_input_image, kernels, bias, 2)
 toc = time.perf_counter()
 print("Convolution timer:", {toc - tic}, "seconds")
 
