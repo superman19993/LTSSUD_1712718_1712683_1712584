@@ -40,8 +40,8 @@ def readKernelFiltersAndBias():
     #7 7 3 64 -> 64 7 7 3
     kernel = np.transpose(kernel, [3,0,1,2])
     return kernel, bias
+  
 
- 
 @cuda.jit
 def ConvolutionKernel(input_image, output_image, filters, bias, stride):
   c, r, n_f = cuda.grid(3)
@@ -51,22 +51,17 @@ def ConvolutionKernel(input_image, output_image, filters, bias, stride):
   (_, out_h, out_w, _) = output_image.shape
 
   if n_f < filters.shape[0] and r < out_h and c < out_w:
-    row = 0
-    while row + filter_size <= img_h:
-      column = 0
-      while column + filter_size <= img_w:
-        # output_image[0, r, c, n_f] = np.sum(filters[n_f] * input_image[0, row:row + filters.shape[1], column:column + filters.shape[2],:]) + bias[n_f]
-        for channel in range(0, n_c):
-          for filterR, inR in zip(range(0, filter_size), range(row,row+filter_size)):
-            for filterC,inC in zip(range(0, filter_size), range(column,column+filter_size)):
-              output_image[0, r, c, n_f] += filters[n_f,filterR,filterC,channel] * input_image[0, inR, inC, channel]
-        output_image[0, r, c, n_f] += bias[n_f]
-        column+= stride
+    row = stride*r
+    column = stride*c 
+    if row + filter_size <= img_h and column + filter_size <= img_w:
+      # output_image[0, r, c, n_f] = np.sum(filters[n_f] * input_image[0, row:row + filters.shape[1], column:column + filters.shape[2],:]) + bias[n_f]
+      for channel in range(0, n_c):
+        for filterR, inR in zip(range(0, filter_size), range(row,row+filter_size)):
+          for filterC,inC in zip(range(0, filter_size), range(column,column+filter_size)):
+            output_image[0, r, c, n_f] += filters[n_f,filterR,filterC,channel] * input_image[0, inR, inC, channel]
+      output_image[0, r, c, n_f] += bias[n_f]
 
-      row+= stride
-  
 
-      
 def convolution(image, Filter, bias, stride=1):
     # convolution of input image with a filter of dimensions(n_f,n_c,f,f)
     # n_f is number filters
@@ -99,56 +94,6 @@ def convolution(image, Filter, bias, stride=1):
     print(out.shape)
 
     return out
-
-# @jit
-# def convolution2(image, Filter, bias, stride=1):
-#     # convolution of input image with a filter of dimensions(n_f,n_c,f,f)
-#     # n_f is number filters
-#     # n_fc is number channels
-#     # f,f are height & width
-
-#     # image dimensions(n_c, image_h, image_w)
-#     # n_c is number channels in image
-#     # img_h is height of image
-#     # img_w is width of image
-
-#     (_, img_h, img_w, n_c) = image.shape
-#     (n_f, f, f, n_fc) = Filter.shape
-
-#     # output dimensions after convolution
-#     out_h = int((img_h - f) / stride) + 1  # height of output matrix
-#     out_w = int((img_h - f) / stride) + 1  # width of output matrix
-#     # n_f will be the depth of the matrix
-
-#     out = np.zeros((1, out_h, out_w, n_f))
-
-#     # convolution of image_array with filter yeilds out_array
-#     # for i in range of no.of filters
-#     # define a row , out_y variabless to hover along rows of image, out_matrix respectively
-#     # define a column , out_x variables to hover along columns of image, out_matrix respectively
-#     # convolution is done in the ranges of image_height to image_width
-#     for i in range(n_f):
-#         row = out_row = 0
-#         while row + f <= img_h:
-#             column = out_column = 0
-
-#             while column + f <= img_w:
-#                 for channel in range(0, n_c):
-#                   for filterR, inR in zip(range(0, f), range(row,row+f)):
-#                     for filterC, inC in zip(range(0, f), range(column,column+f)):
-#                       out[0, out_row, out_column, i] += Filter[i,filterR,filterC,channel] * image[0, inR, inC, channel]
-#                 out[0, out_row, out_column, i] += bias[i]
-#                 column += stride
-#                 out_column += 1
-
-#             row += stride
-#             out_row += 1
-        
-#         print(i)
-
-#     print(out.shape)
-
-#     return out
 
 
 tic = time.perf_counter()
