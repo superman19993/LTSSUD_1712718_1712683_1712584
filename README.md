@@ -1,7 +1,7 @@
 # LTSSUD_1712718_1712683_1712584
 
 ## Lập trình song song ứng dụng.
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://github.com/superman19993/LTSSUD_1712718_1712683_1712584/blob/main/LTSSUD-Report.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/drive/1V1YkQHvIPv5-THZ0ETgPHOIy2O2teKBN)
 ### Giảng viên: Thầy Trần Trung Kiên
 
 ## Thông tin nhóm
