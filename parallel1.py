@@ -107,8 +107,6 @@ def convolution(image, Filter, bias, stride=1):
     Filter = np.ascontiguousarray(Filter, dtype=np.float32)
     ConvolutionKernel[grid_size, block_size](image, out, Filter, bias, stride)
 
-    print(out.shape)
-
     return out
 
 @cuda.jit
@@ -203,42 +201,47 @@ def MaxPool2D(input, pool_size, stride):
                 out.shape[3])
   MaxPool2DKernel[grid_size,block_size](input, out, pool_size, stride)
 
-  print(out.shape)
-
   return out
 
 
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image = Zeropadding(inferenceConfig3.processed_input_image, 3)
 toc = time.perf_counter()
-print("Zeropadding timer:", {toc - tic}, "seconds")
+zeroPaddingTime = toc - tic
+print("Zeropadding timer:", {zeroPaddingTime}, "seconds")
 
 kernels, bias = readKernelFiltersAndBias()
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image=convolution(inferenceConfig3.processed_input_image, kernels, bias, 2)
 toc = time.perf_counter()
-print("Convolution timer:", {toc - tic}, "seconds")
+convTime = toc - tic
+print("Convolution timer:", {convTime}, "seconds")
 
 beta, gamma, moving_mean, moving_variance = readBatchNorm_C1()
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image=batchNorm(inferenceConfig3.processed_input_image, beta, gamma, moving_mean, moving_variance)
 toc = time.perf_counter()
-print("BatchNorm timer:", {toc - tic}, "seconds")
+batchNormTime = toc - tic
+print("BatchNorm timer:", {batchNormTime}, "seconds")
 
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image=Activation_Relu(inferenceConfig3.processed_input_image)
 toc = time.perf_counter()
-print("Relu timer:", {toc - tic}, "seconds")
+reluTime = toc - tic
+print("Relu timer:", {reluTime}, "seconds")
 
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image=MaxPool2D(inferenceConfig3.processed_input_image, 3 ,2)
 toc = time.perf_counter()
-print("Maxpooling timer (with padding):", {toc - tic}, "seconds")
-
-
+maxpoolTime = toc - tic
+print("Maxpooling timer (with padding):", {maxpoolTime}, "seconds")
+print ("C1 timer: ", {zeroPaddingTime+convTime+batchNormTime+reluTime+maxpoolTime}, "seconds")
 
 # Run detection
+tic = time.perf_counter()
 results = model3.detect([inferenceConfig3.image], inferenceConfig3.processed_input_image, verbose=0)
+toc = time.perf_counter()
+print("Detect time:", {toc - tic}, "seconds")
 
 r = results[0]
 

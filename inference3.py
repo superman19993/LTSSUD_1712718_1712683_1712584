@@ -8,7 +8,7 @@ import math
 import tensorflow as tf
 import time
 
-@jit
+@jit(cache=True)
 def Zeropadding(input_image, padding):
   outputShape = (input_image.shape[0],input_image.shape[1]+2*padding,input_image.shape[2]+2*padding,input_image.shape[3])
   outImage = np.zeros(outputShape)
@@ -58,7 +58,7 @@ def readBatchNorm_C1():
     moving_variance = np.array(bn_conv1Child.get('moving_variance:0'))
     return beta, gamma, moving_mean, moving_variance
  
-@jit
+@jit(cache=True)
 def convolution(image, Filter, bias, stride=1):
     # convolution of input image with a filter of dimensions(n_f,n_c,f,f)
     # n_f is number filters
@@ -104,7 +104,7 @@ def convolution(image, Filter, bias, stride=1):
 
     return out
 
-@jit
+@jit(cache=True)
 def convolution2(image, Filter, bias, stride=1):
     # convolution of input image with a filter of dimensions(n_f,n_c,f,f)
     # n_f is number filters
@@ -147,12 +147,10 @@ def convolution2(image, Filter, bias, stride=1):
 
             row += stride
             out_row += 1
-
-    print(out.shape)
-
+            
     return out
 
-@jit
+@jit(cache=True)
 def batchNorm(img_conv1, beta, gamma, moving_mean, moving_variance):
   # n = 1, input_h = 512, input_w = 512, n_f = 64
   (n, input_h, input_w, n_f) = img_conv1.shape
@@ -165,7 +163,7 @@ def batchNorm(img_conv1, beta, gamma, moving_mean, moving_variance):
         img_conv1[0, row, column, f] = gamma[f] * X_hat + beta[f]
   return img_conv1
 
-@jit
+@jit(cache=True)
 def Relu(input):
   # n = 1, input_h = 512, input_w = 512, n_f = 64
   (n, input_h, input_w, n_f) = input.shape
@@ -178,7 +176,7 @@ def Relu(input):
 
   return input
 
-@jit
+@jit(cache=True)
 def PaddingBeforeMaxPool(input):
   outputShape = (input.shape[0],input.shape[1]+1,input.shape[2]+1,input.shape[3])
   outImage = np.zeros(outputShape)
@@ -189,7 +187,7 @@ def PaddingBeforeMaxPool(input):
 
   return outImage
 
-@jit
+@jit(cache=True)
 def MaxPool2D(input, pool_size, stride, padding = 'valid'):
   (_, img_h, img_w, n_c) = input.shape
 
@@ -220,39 +218,47 @@ def MaxPool2D(input, pool_size, stride, padding = 'valid'):
           row += stride
           out_row += 1
 
-  print(out.shape)
-
   return out
 
 
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image = Zeropadding(inferenceConfig3.processed_input_image, 3)
 toc = time.perf_counter()
-print("Zeropadding timer:", {toc - tic}, "seconds")
+zeroPaddingTime = toc - tic
+print("Zeropadding timer:", {zeroPaddingTime}, "seconds")
 
 kernels, bias = readKernelFiltersAndBias()
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image=convolution2(inferenceConfig3.processed_input_image, kernels, bias, 2)
 toc = time.perf_counter()
-print("Convolution timer:", {toc - tic}, "seconds")
+convTime = toc - tic
+print("Convolution timer:", {convTime}, "seconds")
 
 beta, gamma, moving_mean, moving_variance = readBatchNorm_C1()
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image=batchNorm(inferenceConfig3.processed_input_image, beta, gamma, moving_mean, moving_variance)
 toc = time.perf_counter()
-print("BatchNorm timer:", {toc - tic}, "seconds")
+batchNormTime = toc - tic
+print("BatchNorm timer:", {batchNormTime}, "seconds")
 
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image=Relu(inferenceConfig3.processed_input_image)
 toc = time.perf_counter()
-print("Relu timer:", {toc - tic}, "seconds")
+reluTime = toc - tic
+print("Relu timer:", {reluTime}, "seconds")
 
 tic = time.perf_counter()
 inferenceConfig3.processed_input_image=MaxPool2D(inferenceConfig3.processed_input_image, 3 ,2, 'same')
 toc = time.perf_counter()
-print("Maxpooling timer (with padding):", {toc - tic}, "seconds")
+maxpoolTime = toc - tic
+print("Maxpooling timer (with padding):", {maxpoolTime}, "seconds")
+print ("C1 timer: ", {zeroPaddingTime+convTime+batchNormTime+reluTime+maxpoolTime}, "seconds")
+
 # Run detection
+tic = time.perf_counter()
 results = model3.detect([inferenceConfig3.image], inferenceConfig3.processed_input_image, verbose=0)
+toc = time.perf_counter()
+print("Detect time:", {toc - tic}, "seconds")
 
 r = results[0]
 

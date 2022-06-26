@@ -134,7 +134,8 @@ def main(input_image, padding, Filter, bias, stride, beta, gamma, moving_mean, m
                 input_image.shape[3])
   ZeropaddingKernel[grid_size, block_size](input_image, d_ZeroPaddingOutImage, padding)
   toc = time.perf_counter()
-  print("Zeropadding timer:", {toc - tic}, "seconds")
+  zeroPaddingTime = toc - tic
+  print("Zeropadding timer:", {zeroPaddingTime}, "seconds")
 
   #2. Convolution
   tic = time.perf_counter()
@@ -157,19 +158,22 @@ def main(input_image, padding, Filter, bias, stride, beta, gamma, moving_mean, m
   Filter = np.ascontiguousarray(Filter, dtype=np.float32)
   ConvolutionKernel[grid_size, block_size](d_ZeroPaddingOutImage, d_convolutionOutImage, Filter, bias, stride)
   toc = time.perf_counter()
-  print("Convolution timer:", {toc - tic}, "seconds")
+  convTime = toc - tic
+  print("Convolution timer:", {convTime}, "seconds")
 
   #3. batch normilization
   tic = time.perf_counter()
   batchNorm_kernel[grid_size, block_size](d_convolutionOutImage, beta, gamma, moving_mean, moving_variance)
   toc = time.perf_counter()
-  print("BatchNorm timer:", {toc - tic}, "seconds")
+  batchNormTime = toc - tic
+  print("BatchNorm timer:", {batchNormTime}, "seconds")
 
   #4. Relu activation
   tic = time.perf_counter()
   Activation_Relu_kernel[grid_size, block_size](d_convolutionOutImage, out_h, out_w, n_f)
   toc = time.perf_counter()
-  print("Relu timer:", {toc - tic}, "seconds")
+  reluTime = toc - tic
+  print("Relu timer:", {reluTime}, "seconds")
 
   #5. Padding before maxpool
   tic = time.perf_counter()
@@ -196,10 +200,15 @@ def main(input_image, padding, Filter, bias, stride, beta, gamma, moving_mean, m
 
   d_maxpoolOutImage.copy_to_host(maxpoolOutImage)
   toc = time.perf_counter()
-  print("Maxpool timer:", {toc - tic}, "seconds")
-  #Run detection
-  results = model3.detect([inferenceConfig3.image], maxpoolOutImage, verbose=0)
+  maxpoolTime = toc - tic
+  print("Maxpooling timer (with padding):", {maxpoolTime}, "seconds")
+  print ("C1 timer: ", {zeroPaddingTime+convTime+batchNormTime+reluTime+maxpoolTime}, "seconds")
 
+  #Run detection
+  tic = time.perf_counter()
+  results = model3.detect([inferenceConfig3.image], maxpoolOutImage, verbose=0)
+  toc = time.perf_counter()
+  print("Detect time:", {toc - tic}, "seconds")
   r = results[0]
 
   # Visualize results
