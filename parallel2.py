@@ -78,7 +78,7 @@ def batchNorm_kernel(img_conv1, beta, gamma, moving_mean, moving_variance):
 def Activation_Relu_kernel(input, input_h, input_w, n_f):
   c, r, f = cuda.grid(3)
 
-  if f < n_f and r < input_h and r < input_w:
+  if f < n_f and r < input_h and c < input_w:
     if input[0, r, c, f] < 0:
       input[0, r, c, f] = 0
 
