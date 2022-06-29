@@ -1,0 +1,11 @@
+*** How to run ***
+
+B1: Tải folder LTSS trên drive được chia sẻ https://drive.google.com/drive/folders/13oghTaXRkw4Iwu0NRncorvsplZhH_vUF?usp=sharing
+
+B2: Upload lên thư mục MyDrive(Drive của tôi) sử dụng tài khoản gg drive của thầy.
+
+B3: Mở link github của nhóm: https://github.com/superman19993/LTSSUD_1712718_1712683_1712584, click vào "Open in Colab" trong phần README.md
+
+B4: Chạy các cell code trong phần "Mount source code from Google Drive and choose tensorflow version".
+
+B5: Có thể chạy được các cell code còn lại rồi.
