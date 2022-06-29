@@ -57,7 +57,7 @@ def build(mode, config):
     input_image = KL.Input(
             shape=[None, None, config.IMAGE_SHAPE[2]], name="input_image")
 
-    processed_input_image = KL.Input(shape=[None, None, 64], name="processed_input_image")
+    processed_input_image = KL.Input(shape=[None, None, 256], name="processed_input_image")
     print(processed_input_image.shape)
     input_image_meta = KL.Input(shape=[config.IMAGE_META_SIZE],
                                     name="input_image_meta")
@@ -104,7 +104,7 @@ def build(mode, config):
         _, C2, C3, C4, C5 = config.BACKBONE(input_image, stage5=True,
                                             train_bn=config.TRAIN_BN)
     else:
-        _, C2, C3, C4, C5 = resnet_graph(processed_input_image, config.BACKBONE,
+        C2, C3, C4, C5 = resnet_graph(processed_input_image, config.BACKBONE,
                                          stage5=True, train_bn=config.TRAIN_BN)
     # Top-down Layers
     # TODO: add assert to varify feature map sizes match what's in config
@@ -815,19 +815,21 @@ def resnet_graph(input_image, architecture, stage5=False, train_bn=True):
         train_bn: Boolean. Train or freeze Batch Norm layers
     """
     assert architecture in ["resnet50", "resnet101"]
-    print(architecture)
     # Stage 1
     # x = KL.ZeroPadding2D((3, 3))(input_image)
     # print(x.shape)
     # x = KL.Conv2D(64, (7, 7), strides=(2, 2), name='conv1', use_bias=True)(input_image)
     # print(x.shape)
-    x = BatchNorm(name='bn_conv1')(input_image, training=train_bn)
-    x = KL.Activation('relu')(x)
-    C1 = x = KL.MaxPooling2D((3, 3), strides=(2, 2), padding="same")(x)
+    # x = BatchNorm(name='bn_conv1')(input_image, training=train_bn)
+    #x = KL.Activation('relu')(input_image)
+    #C1 = x = KL.MaxPooling2D((3, 3), strides=(2, 2), padding="same")(input_image)
+    #C1 = input_image
+    #print(x.shape)
     # Stage 2
-    x = conv_block(x, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), train_bn=train_bn)
-    x = identity_block(x, 3, [64, 64, 256], stage=2, block='b', train_bn=train_bn)
-    C2 = x = identity_block(x, 3, [64, 64, 256], stage=2, block='c', train_bn=train_bn)
+    #x = conv_block(input_image, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), train_bn=train_bn)
+    #x = identity_block(input_image, 3, [64, 64, 256], stage=2, block='b', train_bn=train_bn)
+    #C2 = x = identity_block(input_image, 3, [64, 64, 256], stage=2, block='c', train_bn=train_bn)
+    C2 = x = input_image
     # Stage 3
     x = conv_block(x, 3, [128, 128, 512], stage=3, block='a', train_bn=train_bn)
     x = identity_block(x, 3, [128, 128, 512], stage=3, block='b', train_bn=train_bn)
@@ -846,7 +848,7 @@ def resnet_graph(input_image, architecture, stage5=False, train_bn=True):
         C5 = x = identity_block(x, 3, [512, 512, 2048], stage=5, block='c', train_bn=train_bn)
     else:
         C5 = None
-    return [C1, C2, C3, C4, C5]
+    return [C2, C3, C4, C5]
 
 
 def rpn_graph(feature_map, anchors_per_location, anchor_stride):
