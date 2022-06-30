@@ -828,7 +828,7 @@ def resnet_graph(input_image, architecture, stage5=False, train_bn=True):
     # Stage 2
     #x = conv_block(input_image, 3, [64, 64, 256], stage=2, block='a', strides=(1, 1), train_bn=train_bn)
     #x = identity_block(input_image, 3, [64, 64, 256], stage=2, block='b', train_bn=train_bn)
-    #C2 = x = identity_block(input_image, 3, [64, 64, 256], stage=2, block='c', train_bn=train_bn)
+    #C2 = x = identity_block(x, 3, [64, 64, 256], stage=2, block='c', train_bn=train_bn)
     C2 = x = input_image
     # Stage 3
     x = conv_block(x, 3, [128, 128, 512], stage=3, block='a', train_bn=train_bn)
